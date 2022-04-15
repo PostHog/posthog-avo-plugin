@@ -1,0 +1,33 @@
+{
+    "name": "Avo Inspector Plugin",
+    "url": "https://github.com/posthog/posthog-avo-plugin",
+    "description": "Export PostHog events to Avo inspector.",
+    "main": "index.ts",
+    "posthogVersion": ">= 1.24.0",
+    "config": [
+        {
+            "key": "avoApiKey",
+            "hint": "",
+            "name": "Avo API Key",
+            "type": "string",
+            "default": "",
+            "required": true
+        },
+        {
+            "key": "environment",
+            "hint": "",
+            "name": "Environment",
+            "type": "string",
+            "default": "dev",
+            "required": false
+        },
+        {
+            "key": "appName",
+            "hint": "",
+            "name": "App name",
+            "type": "string",
+            "default": "PostHog",
+            "required": false
+        }
+    ]
+}
