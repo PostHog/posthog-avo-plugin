@@ -14,7 +14,16 @@ interface AvoInspectorMeta {
 }
 type AvoInspectorPlugin = Plugin<AvoInspectorMeta>
 
-export const exportEvents: AvoInspectorPlugin['exportEvents'] = async (events, { config }) => {
+export const setupPlugin: AvoInspectorPlugin['setupPlugin'] = async ({ config, global }) => {
+    global.defaultHeaders = {
+        env: config.environment,
+        'api-key': config.avoApiKey,
+        'content-type': 'application/json',
+        accept: 'application/json',
+    }
+}
+
+export const exportEvents: AvoInspectorPlugin['exportEvents'] = async (events, { config, global }) => {
     if (events.length === 0) {
         return
     }
@@ -22,13 +31,6 @@ export const exportEvents: AvoInspectorPlugin['exportEvents'] = async (events, {
     const sessionId = randomUUID()
     const now = new Date().toISOString()
     const avoEvents = []
-
-    const defaultHeaders = {
-        env: config.environment,
-        'api-key': config.avoApiKey,
-        'content-type': 'application/json',
-        accept: 'application/json',
-    }
 
     const baseEventPayload = {
         apiKey: config.avoApiKey,
@@ -63,7 +65,7 @@ export const exportEvents: AvoInspectorPlugin['exportEvents'] = async (events, {
         // start a tracking session
         const sessionStartRes = await fetch('https://api.avo.app/inspector/posthog/v1/track', {
             method: 'POST',
-            headers: defaultHeaders,
+            headers: global.defaultHeaders,
             body: JSON.stringify([
                 {
                     apiKey: config.avoApiKey,
@@ -89,7 +91,7 @@ export const exportEvents: AvoInspectorPlugin['exportEvents'] = async (events, {
         // track events
         const trackEventsRes = await fetch('https://api.avo.app/inspector/posthog/v1/track', {
             method: 'POST',
-            headers: defaultHeaders,
+            headers: global.defaultHeaders,
             body: JSON.stringify(avoEvents),
         })
 
