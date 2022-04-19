@@ -53,12 +53,14 @@ export const exportEvents: AvoInspectorPlugin['exportEvents'] = async (events, {
     }
 
     for (const event of events) {
-        avoEvents.push({
-            ...baseEventPayload,
-            eventName: event.event,
-            messageId: event.uuid,
-            eventProperties: event.properties ? convertPosthogPropsToAvoProps(event.properties) : [],
-        })
+        if (!event.event.startsWith("$")) {
+            avoEvents.push({
+                ...baseEventPayload,
+                eventName: event.event,
+                messageId: event.uuid,
+                eventProperties: event.properties ? convertPosthogPropsToAvoProps(event.properties) : [],
+            })
+        }
     }
 
     try {
@@ -116,7 +118,9 @@ export const exportEvents: AvoInspectorPlugin['exportEvents'] = async (events, {
 const convertPosthogPropsToAvoProps = (properties: Record<string, any>): Record<string, string>[] => {
     const avoProps = []
     for (const [propertyName, propertyValue] of Object.entries(properties)) {
-        avoProps.push({ propertyName, propertyType: getPropValueType(propertyValue) })
+        if (!propertyName.startsWith("$")) {
+            avoProps.push({ propertyName, propertyType: getPropValueType(propertyValue) })
+        };
     }
     return avoProps
 }
