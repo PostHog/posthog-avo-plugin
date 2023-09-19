@@ -23,14 +23,13 @@ export const setupPlugin: AvoInspectorPlugin['setupPlugin'] = async ({ config, g
     }
 }
 
-export const exportEvents: AvoInspectorPlugin['exportEvents'] = async (events, { config, global }) => {
-    if (events.length === 0) {
+export const onEvent: AvoInspectorPlugin['onEvent'] = async (event, { config, global }) => {
+    if (event.event.startsWith("$")) {
         return
     }
 
     const sessionId = randomUUID()
     const now = new Date().toISOString()
-    const avoEvents = []
 
     const baseEventPayload = {
         apiKey: config.avoApiKey,
@@ -52,15 +51,11 @@ export const exportEvents: AvoInspectorPlugin['exportEvents'] = async (events, {
         eventProperties: [],
     }
 
-    for (const event of events) {
-        if (!event.event.startsWith("$")) {
-            avoEvents.push({
-                ...baseEventPayload,
-                eventName: event.event,
-                messageId: event.uuid,
-                eventProperties: event.properties ? convertPosthogPropsToAvoProps(event.properties) : [],
-            })
-        }
+    const avoEvent = {
+        ...baseEventPayload,
+        eventName: event.event,
+        messageId: event.uuid,
+        eventProperties: event.properties ? convertPosthogPropsToAvoProps(event.properties) : [],
     }
 
     try {
@@ -94,7 +89,7 @@ export const exportEvents: AvoInspectorPlugin['exportEvents'] = async (events, {
         const trackEventsRes = await fetch('https://api.avo.app/inspector/posthog/v1/track', {
             method: 'POST',
             headers: global.defaultHeaders,
-            body: JSON.stringify(avoEvents),
+            body: JSON.stringify(avoEvent),
         })
 
         // https://github.com/node-fetch/node-fetch/issues/1262
@@ -107,8 +102,6 @@ export const exportEvents: AvoInspectorPlugin['exportEvents'] = async (events, {
         ) {
             throw new Error('track events request failed')
         }
-
-        console.log(`Succesfully sent ${events.length} events to Avo`)
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err)
         console.error('Unable to send data to Avo with error:', errorMessage)
