@@ -89,7 +89,7 @@ export const onEvent: AvoInspectorPlugin['onEvent'] = async (event, { config, gl
         const trackEventsRes = await fetch('https://api.avo.app/inspector/posthog/v1/track', {
             method: 'POST',
             headers: global.defaultHeaders,
-            body: JSON.stringify(avoEvent),
+            body: JSON.stringify([avoEvent]),
         })
 
         // https://github.com/node-fetch/node-fetch/issues/1262
