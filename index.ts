@@ -10,6 +10,8 @@ interface AvoInspectorMeta {
         appName: string
         avoApiKey: string
         environment: string
+        excludeProerties: string[]
+        inlucdeProperties: string[]
     }
 }
 type AvoInspectorPlugin = Plugin<AvoInspectorMeta>
@@ -55,7 +57,7 @@ export const onEvent: AvoInspectorPlugin['onEvent'] = async (event, { config, gl
         ...baseEventPayload,
         eventName: event.event,
         messageId: event.uuid,
-        eventProperties: event.properties ? convertPosthogPropsToAvoProps(event.properties) : [],
+        eventProperties: event.properties ? convertPosthogPropsToAvoProps(event.properties, config.excludeProperties, config.includeProperties) : [],
     }
 
     try {
@@ -108,10 +110,14 @@ export const onEvent: AvoInspectorPlugin['onEvent'] = async (event, { config, gl
     }
 }
 
-const convertPosthogPropsToAvoProps = (properties: Record<string, any>): Record<string, string>[] => {
+const convertPosthogPropsToAvoProps = (properties: Record<string, any>, excludeProperties: string[], includeProperties: string[]): Record<string, string>[] => {
     const avoProps = []
+
     for (const [propertyName, propertyValue] of Object.entries(properties)) {
-        if (!propertyName.startsWith("$")) {
+        const isIncluded = includeProperties.length > 0 ? includeProperties.includes(propertyName) : true
+        const isExcluded = excludeProperties.includes(propertyName)
+
+        if (!propertyName.startsWith("$") && isIncluded && !isExcluded) {
             avoProps.push({ propertyName, propertyType: getPropValueType(propertyValue) })
         };
     }
