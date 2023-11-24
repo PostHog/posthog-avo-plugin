@@ -12,7 +12,7 @@ interface AvoInspectorMeta {
         environment: string
         excludeEvents: string[]
         includeEvents: string[]
-        excludeProerties: string[]
+        excludeProperties: string[]
         includeProperties: string[]
     }
 }
