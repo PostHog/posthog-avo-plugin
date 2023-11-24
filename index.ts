@@ -10,8 +10,10 @@ interface AvoInspectorMeta {
         appName: string
         avoApiKey: string
         environment: string
+        excludeEvents: string[]
+        includeEvents: string[]
         excludeProerties: string[]
-        inlucdeProperties: string[]
+        includeProperties: string[]
     }
 }
 type AvoInspectorPlugin = Plugin<AvoInspectorMeta>
@@ -26,7 +28,10 @@ export const setupPlugin: AvoInspectorPlugin['setupPlugin'] = async ({ config, g
 }
 
 export const onEvent: AvoInspectorPlugin['onEvent'] = async (event, { config, global }) => {
-    if (event.event.startsWith("$")) {
+    const isIncluded = config.includeEvents.length > 0 ? config.includeEvents.includes(event.event) : true
+    const isExcluded = config.excludeEvents.includes(event.event)
+
+    if (event.event.startsWith("$") && isIncluded && !isExcluded) {
         return
     }
 
