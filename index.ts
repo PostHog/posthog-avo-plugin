@@ -42,7 +42,7 @@ export const setupPlugin: AvoInspectorPlugin['setupPlugin'] = async ({ config, g
     )
 }
 
-export const composeWebhook: AvoInspectorPlugin['onEvent'] = async (event, { config, global }) => {
+export const composeWebhook: AvoInspectorPlugin['onEvent'] = (event, { config, global }) => {
     const isIncluded = global.includeEvents.length > 0 ? global.includeEvents.includes(event.event) : true
     const isExcluded = global.excludeEvents.includes(event.event)
 
