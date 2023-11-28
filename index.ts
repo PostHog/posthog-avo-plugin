@@ -2,16 +2,20 @@ import { Plugin } from '@posthog/plugin-scaffold'
 
 interface AvoInspectorMeta {
     global: {
-        defaultHeaders: Record<string, string>
+        defaultHeaders: Record<string, string>,
+        excludeEvents: Set<String>,
+        includeEvents: Set<String>,
+        excludeProperties: Set<String>,
+        includeProperties: Set<String>,
     }
     config: {
         appName: string
         avoApiKey: string
         environment: string
-        excludeEvents: string[]
-        includeEvents: string[]
-        excludeProperties: string[]
-        includeProperties: string[]
+        excludeEvents: string
+        includeEvents: string
+        excludeProperties: string
+        includeProperties: string
     }
 }
 type AvoInspectorPlugin = Plugin<AvoInspectorMeta>
@@ -23,11 +27,24 @@ export const setupPlugin: AvoInspectorPlugin['setupPlugin'] = async ({ config, g
         'content-type': 'application/json',
         accept: 'application/json',
     }
+
+    global.excludeEvents = new Set(
+        config.excludeEvents ? config.excludeEvents.split(',').map((event) => event.trim()) : null
+    )
+    global.includeEvents = new Set(
+        config.includeEvents ? config.includeEvents.split(',').map((event) => event.trim()) : null
+    )
+    global.excludeProperties = new Set(
+        config.excludeProperties ? config.excludeProperties.split(',').map((event) => event.trim()) : null
+    )
+    global.includeProperties = new Set(
+        config.includeProperties ? config.includeProperties.split(',').map((event) => event.trim()) : null
+    )
 }
 
 export const composeWebhook: AvoInspectorPlugin['onEvent'] = async (event, { config, global }) => {
-    const isIncluded = config.includeEvents.length > 0 ? config.includeEvents.includes(event.event) : true
-    const isExcluded = config.excludeEvents.includes(event.event)
+    const isIncluded = global.includeEvents.length > 0 ? global.includeEvents.includes(event.event) : true
+    const isExcluded = global.excludeEvents.includes(event.event)
 
     if (event.event.startsWith("$") && isIncluded && !isExcluded) {
         return
@@ -58,7 +75,7 @@ export const composeWebhook: AvoInspectorPlugin['onEvent'] = async (event, { con
         ...baseEventPayload,
         eventName: event.event,
         messageId: event.uuid,
-        eventProperties: event.properties ? convertPosthogPropsToAvoProps(event.properties, config.excludeProperties, config.includeProperties) : [],
+        eventProperties: event.properties ? convertPosthogPropsToAvoProps(event.properties, global.excludeProperties, global.includeProperties) : [],
     }
 
     return {
@@ -69,12 +86,12 @@ export const composeWebhook: AvoInspectorPlugin['onEvent'] = async (event, { con
     }
 }
 
-const convertPosthogPropsToAvoProps = (properties: Record<string, any>, excludeProperties: string[], includeProperties: string[]): Record<string, string>[] => {
+const convertPosthogPropsToAvoProps = (properties: Record<string, any>, excludeProperties: Set<String>, includeProperties: Set<String>): Record<string, string>[] => {
     const avoProps = []
 
     for (const [propertyName, propertyValue] of Object.entries(properties)) {
-        const isIncluded = includeProperties.length > 0 ? includeProperties.includes(propertyName) : true
-        const isExcluded = excludeProperties.includes(propertyName)
+        const isIncluded = includeProperties.size > 0 ? includeProperties.has(propertyName) : true
+        const isExcluded = excludeProperties.has(propertyName)
 
         if (!propertyName.startsWith("$") && isIncluded && !isExcluded) {
             avoProps.push({ propertyName, propertyType: getPropValueType(propertyValue) })
