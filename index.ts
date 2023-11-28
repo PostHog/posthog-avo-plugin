@@ -1,6 +1,4 @@
-import { randomUUID } from 'crypto'
 import { Plugin } from '@posthog/plugin-scaffold'
-import fetch from 'node-fetch'
 
 interface AvoInspectorMeta {
     global: {
@@ -27,7 +25,7 @@ export const setupPlugin: AvoInspectorPlugin['setupPlugin'] = async ({ config, g
     }
 }
 
-export const onEvent: AvoInspectorPlugin['onEvent'] = async (event, { config, global }) => {
+export const composeWebhook: AvoInspectorPlugin['onEvent'] = async (event, { config, global }) => {
     const isIncluded = config.includeEvents.length > 0 ? config.includeEvents.includes(event.event) : true
     const isExcluded = config.excludeEvents.includes(event.event)
 
@@ -35,14 +33,12 @@ export const onEvent: AvoInspectorPlugin['onEvent'] = async (event, { config, gl
         return
     }
 
-    const sessionId = randomUUID()
     const now = new Date().toISOString()
 
     const baseEventPayload = {
         apiKey: config.avoApiKey,
         env: config.environment,
         appName: config.appName,
-        sessionId: sessionId,
         createdAt: now,
         avoFunction: false,
         eventId: null,
@@ -65,27 +61,11 @@ export const onEvent: AvoInspectorPlugin['onEvent'] = async (event, { config, gl
         eventProperties: event.properties ? convertPosthogPropsToAvoProps(event.properties, config.excludeProperties, config.includeProperties) : [],
     }
 
-    try {
-        // track events
-        const trackEventsRes = await fetch('https://api.avo.app/inspector/posthog/v1/track', {
-            method: 'POST',
-            headers: global.defaultHeaders,
-            body: JSON.stringify([avoEvent]),
-        })
-
-        // https://github.com/node-fetch/node-fetch/issues/1262
-        const trackEventsResJson = (await trackEventsRes.json()) as Record<string, any> | null
-
-        if (
-            trackEventsRes.status !== 200 ||
-            !trackEventsResJson ||
-            ('ok' in trackEventsResJson && !trackEventsResJson.ok)
-        ) {
-            throw new Error('track events request failed')
-        }
-    } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err)
-        console.error('Unable to send data to Avo with error:', errorMessage)
+    return {
+        url: 'https://api.avo.app/inspector/posthog/v1/track',
+        headers: global.defaultHeaders,
+        body: JSON.stringify([avoEvent]),
+        method: 'POST',
     }
 }
 
