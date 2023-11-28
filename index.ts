@@ -66,32 +66,6 @@ export const onEvent: AvoInspectorPlugin['onEvent'] = async (event, { config, gl
     }
 
     try {
-        // start a tracking session
-        const sessionStartRes = await fetch('https://api.avo.app/inspector/posthog/v1/track', {
-            method: 'POST',
-            headers: global.defaultHeaders,
-            body: JSON.stringify([
-                {
-                    apiKey: config.avoApiKey,
-                    env: config.environment,
-                    appName: config.appName,
-                    createdAt: now,
-                    sessionId: sessionId,
-                    appVersion: '1.0.0',
-                    libVersion: '1.0.1',
-                    libPlatform: 'node',
-                    messageId: randomUUID(),
-                    trackingId: '',
-                    samplingRate: 1,
-                    type: 'sessionStarted',
-                },
-            ]),
-        })
-
-        if (sessionStartRes.status !== 200) {
-            throw new Error(`sessionStarted request failed with status code ${sessionStartRes.status}`)
-        }
-
         // track events
         const trackEventsRes = await fetch('https://api.avo.app/inspector/posthog/v1/track', {
             method: 'POST',
