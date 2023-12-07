@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import { Plugin } from '@posthog/plugin-scaffold'
 
 interface AvoInspectorMeta {
