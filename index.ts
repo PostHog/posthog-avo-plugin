@@ -1,15 +1,22 @@
 import { randomUUID } from 'crypto'
 import { Plugin } from '@posthog/plugin-scaffold'
-import fetch from 'node-fetch'
 
 interface AvoInspectorMeta {
     global: {
-        defaultHeaders: Record<string, string>
+        defaultHeaders: Record<string, string>,
+        excludeEvents: Set<String>,
+        includeEvents: Set<String>,
+        excludeProperties: Set<String>,
+        includeProperties: Set<String>,
     }
     config: {
         appName: string
         avoApiKey: string
         environment: string
+        excludeEvents: string
+        includeEvents: string
+        excludeProperties: string
+        includeProperties: string
     }
 }
 type AvoInspectorPlugin = Plugin<AvoInspectorMeta>
@@ -21,10 +28,26 @@ export const setupPlugin: AvoInspectorPlugin['setupPlugin'] = async ({ config, g
         'content-type': 'application/json',
         accept: 'application/json',
     }
+
+    global.excludeEvents = new Set(
+        config.excludeEvents ? config.excludeEvents.split(',').map((event) => event.trim()) : null
+    )
+    global.includeEvents = new Set(
+        config.includeEvents ? config.includeEvents.split(',').map((event) => event.trim()) : null
+    )
+    global.excludeProperties = new Set(
+        config.excludeProperties ? config.excludeProperties.split(',').map((event) => event.trim()) : null
+    )
+    global.includeProperties = new Set(
+        config.includeProperties ? config.includeProperties.split(',').map((event) => event.trim()) : null
+    )
 }
 
-export const onEvent: AvoInspectorPlugin['onEvent'] = async (event, { config, global }) => {
-    if (event.event.startsWith("$")) {
+export const composeWebhook: AvoInspectorPlugin['onEvent'] = (event, { config, global }) => {
+    const isIncluded = global.includeEvents.length > 0 ? global.includeEvents.has(event.event) : true
+    const isExcluded = global.excludeEvents.has(event.event)
+
+    if (event.event.startsWith("$") || (isExcluded || !isIncluded)) {
         return
     }
 
@@ -55,65 +78,29 @@ export const onEvent: AvoInspectorPlugin['onEvent'] = async (event, { config, gl
         ...baseEventPayload,
         eventName: event.event,
         messageId: event.uuid,
-        eventProperties: event.properties ? convertPosthogPropsToAvoProps(event.properties) : [],
+        eventProperties: event.properties ? convertPosthogPropsToAvoProps(event.properties, global.excludeProperties, global.includeProperties) : [],
     }
 
-    try {
-        // start a tracking session
-        const sessionStartRes = await fetch('https://api.avo.app/inspector/posthog/v1/track', {
-            method: 'POST',
-            headers: global.defaultHeaders,
-            body: JSON.stringify([
-                {
-                    apiKey: config.avoApiKey,
-                    env: config.environment,
-                    appName: config.appName,
-                    createdAt: now,
-                    sessionId: sessionId,
-                    appVersion: '1.0.0',
-                    libVersion: '1.0.1',
-                    libPlatform: 'node',
-                    messageId: randomUUID(),
-                    trackingId: '',
-                    samplingRate: 1,
-                    type: 'sessionStarted',
-                },
-            ]),
-        })
-
-        if (sessionStartRes.status !== 200) {
-            throw new Error(`sessionStarted request failed with status code ${sessionStartRes.status}`)
-        }
-
-        // track events
-        const trackEventsRes = await fetch('https://api.avo.app/inspector/posthog/v1/track', {
-            method: 'POST',
-            headers: global.defaultHeaders,
-            body: JSON.stringify([avoEvent]),
-        })
-
-        // https://github.com/node-fetch/node-fetch/issues/1262
-        const trackEventsResJson = (await trackEventsRes.json()) as Record<string, any> | null
-
-        if (
-            trackEventsRes.status !== 200 ||
-            !trackEventsResJson ||
-            ('ok' in trackEventsResJson && !trackEventsResJson.ok)
-        ) {
-            throw new Error('track events request failed')
-        }
-    } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err)
-        console.error('Unable to send data to Avo with error:', errorMessage)
+    return {
+        url: 'https://api.avo.app/inspector/posthog/v1/track',
+        headers: global.defaultHeaders,
+        body: JSON.stringify([avoEvent]),
+        method: 'POST',
     }
 }
 
-const convertPosthogPropsToAvoProps = (properties: Record<string, any>): Record<string, string>[] => {
+const convertPosthogPropsToAvoProps = (properties: Record<string, any>, excludeProperties: Set<String>, includeProperties: Set<String>): Record<string, string>[] => {
     const avoProps = []
+
     for (const [propertyName, propertyValue] of Object.entries(properties)) {
-        if (!propertyName.startsWith("$")) {
-            avoProps.push({ propertyName, propertyType: getPropValueType(propertyValue) })
-        };
+        const isIncluded = includeProperties.size > 0 ? includeProperties.has(propertyName) : true
+        const isExcluded = excludeProperties.has(propertyName)
+
+        if (propertyName.startsWith("$") || (isExcluded || !isIncluded)) {
+            continue;
+        }
+
+        avoProps.push({ propertyName, propertyType: getPropValueType(propertyValue) });
     }
     return avoProps
 }
