@@ -95,9 +95,11 @@ const convertPosthogPropsToAvoProps = (properties: Record<string, any>, excludeP
         const isIncluded = includeProperties.size > 0 ? includeProperties.has(propertyName) : true
         const isExcluded = excludeProperties.has(propertyName)
 
-        if (!propertyName.startsWith("$") && isIncluded && !isExcluded) {
-            avoProps.push({ propertyName, propertyType: getPropValueType(propertyValue) })
-        };
+        if (propertyName.startsWith("$") || (isExcluded || !isIncluded)) {
+            continue;
+        }
+
+        avoProps.push({ propertyName, propertyType: getPropValueType(propertyValue) });
     }
     return avoProps
 }
