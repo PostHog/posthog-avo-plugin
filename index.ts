@@ -50,12 +50,14 @@ export const composeWebhook: AvoInspectorPlugin['onEvent'] = (event, { config, g
         return
     }
 
+    const sessionId = randomUUID()
     const now = new Date().toISOString()
 
     const baseEventPayload = {
         apiKey: config.avoApiKey,
         env: config.environment,
         appName: config.appName,
+        sessionId: sessionId,
         createdAt: now,
         avoFunction: false,
         eventId: null,
