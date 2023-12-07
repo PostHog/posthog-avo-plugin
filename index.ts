@@ -78,6 +78,8 @@ export const composeWebhook: AvoInspectorPlugin['onEvent'] = (event, { config, g
         eventProperties: event.properties ? convertPosthogPropsToAvoProps(event.properties, global.excludeProperties, global.includeProperties) : [],
     }
 
+    console.log(`Sending event: ${JSON.stringify([avoEvent])}`)
+
     return {
         url: 'https://api.avo.app/inspector/posthog/v1/track',
         headers: global.defaultHeaders,
