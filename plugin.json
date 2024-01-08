@@ -39,7 +39,7 @@
         },
         {
             "key": "includeEvents",
-            "hint": "Comma-separated list of events to send to Avo. All others will be ignored.",
+            "hint": "Comma separated list of events to send to Avo (will send all if left empty).",
             "name": "Events to include",
             "type": "string",
             "default": "",
@@ -55,7 +55,7 @@
         },
         {
             "key": "includeProperties",
-            "hint": "Comma-separated list of event properties to send to Avo. All other properties will not be sent.",
+            "hint": "Comma separated list of event properties to send to Avo (will send all if left empty).",
             "name": "Properties to include",
             "type": "string",
             "default": "",
