@@ -43,7 +43,7 @@ export const setupPlugin: AvoInspectorPlugin['setupPlugin'] = async ({ config, g
     )
 }
 
-export const composeWebhook: AvoInspectorPlugin['onEvent'] = (event, { config, global }) => {
+export const onEvent: AvoInspectorPlugin['onEvent'] = async (event, { config, global }) => {
     const isIncluded = global.includeEvents.length > 0 ? global.includeEvents.has(event.event) : true
     const isExcluded = global.excludeEvents.has(event.event)
 
@@ -89,7 +89,12 @@ export const composeWebhook: AvoInspectorPlugin['onEvent'] = (event, { config, g
         method: 'POST',
     }
     console.log(res)
-    return res
+    const trackEventsRes = await fetch('https://api.avo.app/inspector/posthog/v1/track', {
+            method: 'POST',
+            headers: global.defaultHeaders,
+            body: JSON.stringify([avoEvent]),
+    })
+    console.log(trackEventsRes)
 }
 
 const convertPosthogPropsToAvoProps = (properties: Record<string, any>, excludeProperties: Set<String>, includeProperties: Set<String>): Record<string, string>[] => {
