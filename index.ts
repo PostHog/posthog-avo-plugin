@@ -48,6 +48,7 @@ export const composeWebhook: AvoInspectorPlugin['onEvent'] = (event, { config, g
     const isExcluded = global.excludeEvents.has(event.event)
 
     if (event.event.startsWith("$") || (isExcluded || !isIncluded)) {
+        console.log(`${event.uuid} - skipped (${isExcluded} ${isIncluded})`)
         return
     }
 
