@@ -81,12 +81,14 @@ export const composeWebhook: AvoInspectorPlugin['onEvent'] = (event, { config, g
         eventProperties: event.properties ? convertPosthogPropsToAvoProps(event.properties, global.excludeProperties, global.includeProperties) : [],
     }
 
-    return {
+    const res = {
         url: 'https://api.avo.app/inspector/posthog/v1/track',
         headers: global.defaultHeaders,
         body: JSON.stringify([avoEvent]),
         method: 'POST',
     }
+    console.log(res)
+    return res
 }
 
 const convertPosthogPropsToAvoProps = (properties: Record<string, any>, excludeProperties: Set<String>, includeProperties: Set<String>): Record<string, string>[] => {
