@@ -15,3 +15,10 @@ _Excerpt from the [Avo docs](https://www.avo.app/docs/workspace/inspector#Overvi
 ## Questions?
 
 ### [Join the PostHog Users Slack community.](https://posthog.com/slack)
+
+## Debugging tips
+
+1. use `dev` env when testing as prod could show up hours later
+2. `messageId` needs to unique based on testing to send curls (potentially used for deduping within Avo)
+3. There's user and pass for an account in 1Password
+4. Within the Avo click on Events under Inspector [link](https://www.avo.app/schemas/QtBfxYTrDv36SU3dsre0/inspector/events?order=Ascending&orderBy=EventName&shareId=tVkfNWEt5e)
