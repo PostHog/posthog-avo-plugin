@@ -48,14 +48,13 @@ export const composeWebhook: AvoInspectorPlugin['onEvent'] = (event, { config, g
     const isExcluded = global.excludeEvents.has(event.event)
 
     if (event.event.startsWith("$") || (isExcluded || !isIncluded)) {
-        console.log(`${event.uuid} - skipped (${isExcluded} ${isIncluded})`)
         return
     }
 
     const sessionId = randomUUID()
     const now = new Date().toISOString()
 
-    const baseEventPayload = {
+    const avoEvent = {
         apiKey: config.avoApiKey,
         env: config.environment,
         appName: config.appName,
@@ -67,29 +66,20 @@ export const composeWebhook: AvoInspectorPlugin['onEvent'] = (event, { config, g
         appVersion: '1.0.0',
         libVersion: '1.0.0',
         libPlatform: 'node',
-        messageId: '5875bc8b-a8e6-4f20-a499-8af557467a02',
         trackingId: '',
         samplingRate: 1,
         type: 'event',
-        eventName: 'event_name',
-        eventProperties: [],
-    }
-
-    const avoEvent = {
-        ...baseEventPayload,
         eventName: event.event,
         messageId: event.uuid,
         eventProperties: event.properties ? convertPosthogPropsToAvoProps(event.properties, global.excludeProperties, global.includeProperties) : [],
     }
 
-    const res = {
+    return {
         url: 'https://api.avo.app/inspector/posthog/v1/track',
         headers: global.defaultHeaders,
         body: JSON.stringify([avoEvent]),
         method: 'POST',
     }
-    console.log(res)
-    return res
 }
 
 const convertPosthogPropsToAvoProps = (properties: Record<string, any>, excludeProperties: Set<String>, includeProperties: Set<String>): Record<string, string>[] => {
