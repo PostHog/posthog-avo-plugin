@@ -14,7 +14,7 @@ _Excerpt from the [Avo docs](https://www.avo.app/docs/workspace/inspector#Overvi
 
 ## Questions?
 
-### [Join the PostHog Users Slack community.](https://posthog.com/slack)
+### [Join the PostHog community.](https://posthog.com/questions)
 
 ## Debugging tips
 
